@@ -10,8 +10,7 @@ const {
 
 //server
 const Socket = server => {
-  const io = socketio(server, { forceNew: true });
-
+  const io = socketio(server, { forceNew: true, "force new connection": true });
   io.on("connection", async socket => {
     try {
       socket.on("joinRoom", async ({ username }, callback) => {
