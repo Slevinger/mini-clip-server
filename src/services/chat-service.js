@@ -13,15 +13,11 @@ let messages = [];
 let users = {};
 //SELECT `id`, `username`, `message`,  CONVERT_TZ(`sent_at`,'SYSTEM','Asia/Jerusalem') FROM `messages` WHERE 1 order by sent_at desc limit 10
 const getMessages = async () => {
-  if (messages.length == 0) {
-    const results = await db.query(
-      "SELECT `id`, `username`, `message`, `sent_at` FROM `messages` WHERE 1 order by id desc limit 10"
-    );
-    messages = results.reverse();
-    return messages;
-  } else {
-    return messages;
-  }
+  const results = await db.query(
+    "SELECT `id`, `username`, `message`, `sent_at` FROM `messages` WHERE 1 order by id desc limit 10"
+  );
+  messages = results.reverse();
+  return messages;
 };
 
 const getUsers = () => {
@@ -49,6 +45,7 @@ const addMessage = async (username, text) => {
     const res = await db.query(
       `INSERT into \`messages\` (\`username\`,\`message\`,\`sent_at\`) VALUES('${username}','${text}','${new Date().getTime()}')`
     );
+    await db.query("commit");
   } catch (e) {
     console.log(e);
   }

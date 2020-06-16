@@ -27,10 +27,10 @@ const Socket = server => {
         }
       });
 
-      socket.on("sendMessage", ({ username, message }, callback) => {
+      socket.on("sendMessage", async ({ username, message }, callback) => {
         try {
           if (values(getUsers()).includes(username)) {
-            addMessage(username, message);
+            await addMessage(username, message);
             io.emit("message", { username, message, sent_at: new Date() });
           } else {
             io.emit("leftRoom", { username });
