@@ -15,7 +15,7 @@ let users = {};
 const getMessages = async () => {
   if (messages.length == 0) {
     const results = await db.query(
-      "SELECT `id`, `username`, `message`, `sent_at` FROM `messages` WHERE 1 order by sent_at desc limit 10"
+      "SELECT `id`, `username`, `message`, `sent_at` FROM `messages` WHERE 1 order by id desc limit 10"
     );
     messages = results.reverse();
     return messages;
