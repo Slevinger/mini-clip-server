@@ -94,18 +94,6 @@ const getMessages = async () => {
   }
 };
 
-// const cleanUp = setInterval(()=>{
-//   try {
-//     const res = await query(
-//       "SELECT `id`, `username`, `message`, `sent_at` FROM `messages` WHERE 1=1 order by id desc limit 10"
-//     );
-//     return res.reverse();
-//   } catch (e) {
-//     console.error(e, e.stack);
-//     throw e;
-//   }
-// },100*60)
-
 module.exports = {
   init,
   getMessages,
