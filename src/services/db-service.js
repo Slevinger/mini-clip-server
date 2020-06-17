@@ -6,6 +6,7 @@ let connection;
 function handleDisconnect(db_config) {
   connection = mysql.createConnection(db_config); // Recreate the connection, since
   // the old one cannot be reused.
+  const interval = startCleanUp();
 
   connection.connect(function(err) {
     // The server is either down
@@ -17,6 +18,7 @@ function handleDisconnect(db_config) {
   }); // process asynchronous requests in the meantime.
   // If you're also serving http, display a 503 error.
   connection.on("error", function(err) {
+    clearInterval(interval);
     console.log("db error", err);
     if (err.code === "PROTOCOL_CONNECTION_LOST") {
       // Connection to the MySQL server is usually
@@ -27,6 +29,29 @@ function handleDisconnect(db_config) {
     }
   });
 }
+
+const startCleanUp = () => {
+  return setInterval(async () => {
+    console.log("clening");
+    const res = await query(
+      `delete from \`messages\` WHERE \`id\` in (
+      SELECT \`id\`  from (
+          SELECT @rownum:=@rownum+1 rownum, 
+          t.* 
+        FROM (SELECT @rownum:=0) r,
+          \`messages\` t 
+        where 1=1 
+        ORDER by t.id 
+      ) tt 
+      where 1=1 
+      and tt.rownum > 100)`
+    );
+    if (res.affectedRows === 0) {
+      clearInterval(interval);
+    }
+    await query("commit");
+  }, 24 * 60 * 60 * 100);
+};
 
 const init = config => {
   handleDisconnect(config);
