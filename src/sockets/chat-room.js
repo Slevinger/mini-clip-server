@@ -15,7 +15,7 @@ const Socket = server => {
   io.on("connection", async socket => {
     try {
       socket.on("joinRoom", async ({ username, imageUrl }, callback) => {
-        if (!validator.isAlpha(username)) {
+        if (!validator.isAlphanumeric(username)) {
           return callback(null, "Username must be alphaNumeric");
         }
         const canJoin = await joinRoom(username, imageUrl, socket.id);
