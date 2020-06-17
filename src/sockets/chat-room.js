@@ -39,7 +39,7 @@ const Socket = server => {
             io.emit("leftRoom", { username });
           }
         } catch (e) {
-          callback(null, e);
+          callback(null, e.message);
         }
       });
       /*

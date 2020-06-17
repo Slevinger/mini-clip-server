@@ -43,6 +43,9 @@ const query = async (sql, ...args) => {
 const addMessage = async (username, message) => {
   try {
     // TODO: thibk about error handling in DB client.. should be here or outside?
+    if (!message.trim()) {
+      throw new Error("Message Cannot Be Empty");
+    }
     const res = await query(
       `INSERT into \`messages\` (\`username\`,\`message\`,\`sent_at\`) VALUES('${username}','${message}','${new Date().getTime()}')`
     );
@@ -54,7 +57,7 @@ const addMessage = async (username, message) => {
   }
 };
 
-const getMessages = async args => {
+const getMessages = async () => {
   try {
     const res = await query(
       "SELECT `id`, `username`, `message`, `sent_at` FROM `messages` WHERE 1=1 order by id desc limit 10"
@@ -65,6 +68,18 @@ const getMessages = async args => {
     throw e;
   }
 };
+
+// const cleanUp = setInterval(()=>{
+//   try {
+//     const res = await query(
+//       "SELECT `id`, `username`, `message`, `sent_at` FROM `messages` WHERE 1=1 order by id desc limit 10"
+//     );
+//     return res.reverse();
+//   } catch (e) {
+//     console.error(e, e.stack);
+//     throw e;
+//   }
+// },100*60)
 
 module.exports = {
   init,
