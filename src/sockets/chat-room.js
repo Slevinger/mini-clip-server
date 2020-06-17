@@ -1,4 +1,6 @@
 const socketio = require("socket.io");
+var validator = require("validator");
+
 const values = require("lodash/values");
 const {
   joinRoom,
@@ -13,6 +15,9 @@ const Socket = server => {
   io.on("connection", async socket => {
     try {
       socket.on("joinRoom", async ({ username, imageUrl }, callback) => {
+        if (!validator.isAlpha(username)) {
+          return callback(null, "Username must be alphaNumeric");
+        }
         const canJoin = await joinRoom(username, imageUrl, socket.id);
         if (canJoin) {
           callback({
@@ -51,7 +56,6 @@ socket.on("image", function(info) {
   }
 });
  */
-      socket.on("setProfileImage", async ({ image }) => {});
 
       socket.on("disconnect", reason => {
         const user = leaveRoom(socket.id);
