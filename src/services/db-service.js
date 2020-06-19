@@ -1,6 +1,11 @@
 const util = require("util");
 const mysql = require("mysql");
-
+const { MESSAGE_CANNOT_BE_EMPTY } = require("../consts/errors");
+const {
+  insertMessageAndUserToTable,
+  getLastTenMessagesFromTable,
+  removeAllButLast50Messages
+} = require("../consts/queries");
 let connection;
 
 function handleDisconnect(db_config) {
@@ -33,19 +38,7 @@ function handleDisconnect(db_config) {
 const startCleanUp = () => {
   return setInterval(async () => {
     console.log("clening");
-    const res = await query(
-      `delete from \`messages\` WHERE \`id\` in (
-      SELECT \`id\`  from (
-          SELECT @rownum:=@rownum+1 rownum, 
-          t.* 
-        FROM (SELECT @rownum:=0) r,
-          \`messages\` t 
-        where 1=1 
-        ORDER by t.id 
-      ) tt 
-      where 1=1 
-      and tt.rownum > 100)`
-    );
+    const res = await query(removeAllButLast50Messages);
     if (res.affectedRows === 0) {
       clearInterval(interval);
     }
@@ -67,13 +60,10 @@ const query = async (sql, ...args) => {
 
 const addMessage = async (username, message) => {
   try {
-    // TODO: thibk about error handling in DB client.. should be here or outside?
     if (!message.trim()) {
-      throw new Error("Message Cannot Be Empty");
+      throw new Error(MESSAGE_CANNOT_BE_EMPTY);
     }
-    const res = await query(
-      `INSERT into \`messages\` (\`username\`,\`message\`,\`sent_at\`) VALUES('${username}','${message}','${new Date().getTime()}')`
-    );
+    const res = await query(insertMessageAndUserToTable(username, message));
     await query(`commit`);
     return res;
   } catch (e) {
@@ -84,9 +74,7 @@ const addMessage = async (username, message) => {
 
 const getMessages = async () => {
   try {
-    const res = await query(
-      "SELECT `id`, `username`, `message`, `sent_at` FROM `messages` WHERE 1=1 order by id desc limit 10"
-    );
+    const res = await query(getLastTenMessagesFromTable);
     return res.reverse();
   } catch (e) {
     console.error(e, e.stack);

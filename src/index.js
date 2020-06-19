@@ -9,11 +9,11 @@ const server = http.createServer(app);
 
 (startServer = async () => {
   await dbClient.init({
-    host: "remotemysql.com",
-    port: 3306,
-    user: "Chg9hWNC5G",
-    password: "Jg5rR15uDe",
-    database: "Chg9hWNC5G"
+    host: process.env.SQL_HOST,
+    port: process.env.SQL_PORT,
+    user: process.env.SQL_DB_NAME,
+    password: process.env.SQL_DB_PAS,
+    database: process.env.SQL_DB_NAME
   });
   Socket(server); // assign server to socket io
   const port = process.env.PORT || 3000;

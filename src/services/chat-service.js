@@ -1,6 +1,5 @@
 const values = require("lodash/values");
 
-console.log("connecting to remote DB...");
 let users = {};
 
 const getUsers = () => {

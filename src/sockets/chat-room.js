@@ -47,15 +47,6 @@ const Socket = server => {
           callback(null, e.message);
         }
       });
-      /*
-socket.on("image", function(info) {
-  if (info.image) {
-    var img = new Image();
-    img.src = 'data:image/jpeg;base64,' + info.buffer;
-    ctx.drawImage(img, 0, 0);
-  }
-});
- */
 
       socket.on("disconnect", reason => {
         const user = leaveRoom(socket.id);
