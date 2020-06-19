@@ -74,8 +74,7 @@ const addMessage = async (username, message) => {
 
 const getMessages = async () => {
   try {
-    const res = await query(getLastTenMessagesFromTable);
-    return res.reverse();
+    return await query(getLastTenMessagesFromTable);
   } catch (e) {
     console.error(e, e.stack);
     throw e;

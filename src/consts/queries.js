@@ -2,7 +2,7 @@ const insertMessageAndUserToTable = (username, message) =>
   `INSERT into \`messages\` (\`username\`,\`message\`,\`sent_at\`) VALUES('${username}','${message}','${new Date().getTime()}')`;
 
 const getLastTenMessagesFromTable =
-  "SELECT `id`, `username`, `message`, `sent_at` FROM `messages` WHERE 1=1 order by id desc limit 10";
+  "select * from (SELECT `id`, `username`, `message`, `sent_at` FROM `messages` WHERE 1=1 order by id desc limit 10) t where 1=1 order by id asc";
 
 const removeAllButLast50Messages = `delete from \`messages\` WHERE \`id\` in (
     SELECT \`id\`  from (
