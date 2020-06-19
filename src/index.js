@@ -6,7 +6,7 @@ const dbClient = require("./services/db-service");
 const { Socket } = require("./sockets/chat-room");
 const app = express();
 const server = http.createServer(app);
-
+console.log(process.env);
 (startServer = async () => {
   await dbClient.init({
     host: process.env.SQL_HOST,
