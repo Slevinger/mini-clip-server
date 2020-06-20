@@ -2,9 +2,9 @@ const util = require("util");
 const mysql = require("mysql");
 const { MESSAGE_CANNOT_BE_EMPTY } = require("../consts/errors");
 const {
-  insertMessageAndUserToTable,
-  getLastTenMessagesFromTable,
-  removeAllButLast50Messages
+  INSERT_ONE_ROW_TO_MESSAGES,
+  GET_LAST_10_MESSAGES,
+  REMOVE_ALL_BUT_LAST_50_MESSAGES
 } = require("../consts/queries");
 let connection;
 
@@ -39,7 +39,7 @@ function handleDisconnect(db_config) {
 const startCleanUp = () => {
   return setInterval(async () => {
     console.log("cleaning");
-    const res = await queryAndCommit(removeAllButLast50Messages);
+    const res = await queryAndCommit(REMOVE_ALL_BUT_LAST_50_MESSAGES);
     if (res.affectedRows === 0) {
       clearInterval(interval);
     }
@@ -71,7 +71,7 @@ const addMessage = async (username, message) => {
     if (!message.trim()) {
       throw new Error(MESSAGE_CANNOT_BE_EMPTY);
     }
-    return queryAndCommit(insertMessageAndUserToTable(username, message));
+    return queryAndCommit(INSERT_ONE_ROW_TO_MESSAGES(username, message));
   } catch (e) {
     console.error(e, e.stack);
     throw e;
@@ -79,7 +79,7 @@ const addMessage = async (username, message) => {
 };
 const getRecentMessages = async () => {
   try {
-    return query(getLastTenMessagesFromTable);
+    return query(GET_LAST_10_MESSAGES);
   } catch (e) {
     console.error(e, e.stack);
     throw e;
