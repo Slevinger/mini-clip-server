@@ -21,7 +21,7 @@ leaveRoom = id => {
 };
 
 const canUserJoinRoom = username => {
-  if (Object.values(usersByName).filter(Boolean).length === 1) {
+  if (Object.values(usersByName).filter(Boolean).length === 100) {
     return [false, TOO_MANY_USERS];
   }
   if (!validator.isAlphanumeric(username)) {
