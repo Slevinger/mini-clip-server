@@ -14,10 +14,10 @@ const getUsers = () => {
 };
 
 leaveRoom = id => {
-  const { username } = usersByID[id] || {};
+  const user = usersByID[id] || {};
   delete usersByID[id];
-  delete usersByName[username];
-  return username;
+  delete usersByName[user.username];
+  return user;
 };
 
 const canUserJoinRoom = username => {

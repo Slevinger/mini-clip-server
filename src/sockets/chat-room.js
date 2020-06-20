@@ -9,11 +9,11 @@ const {
   getRecentMessages
 } = require("../services/chat-service.js");
 
-const onJoinRoom = socket => async ({ username, imageUrl }, callback) => {
+const onJoinRoom = emitter => async ({ username, imageUrl }, callback) => {
   const [userJoined, error] = await checkIfUserCanJoinAndJoin(
     username,
     imageUrl,
-    socket.id
+    emitter.id
   );
   if (userJoined) {
     callback({
@@ -23,25 +23,25 @@ const onJoinRoom = socket => async ({ username, imageUrl }, callback) => {
       ),
       messages: await getRecentMessages()
     });
-    socket.broadcast.emit("joinedRoom", { username, imageUrl });
+    emitter.broadcast.emit("joinedRoom", { username, imageUrl });
   } else {
     callback(null, error);
   }
 };
 
-const onDisconnect = socket => reason => {
-  const user = leaveRoom(socket.id);
+const onDisconnect = emitter => reason => {
+  const user = leaveRoom(emitter.id);
   if (user) {
-    socket.emit("leftRoom", user);
+    emitter.broadcast.emit("leftRoom", user);
   }
 };
-const onSendMessage = socket => async ({ username, message }, callback) => {
+const onSendMessage = emitter => async ({ username, message }, callback) => {
   try {
     if (usersByName[username]) {
       await addMessage(username, message);
-      socket.emit("message", { username, message, sent_at: new Date() });
+      emitter.emit("message", { username, message, sent_at: new Date() });
     } else {
-      socket.emit("leftRoom", { username });
+      emitter.emit("leftRoom", { username });
     }
   } catch (e) {
     callback(null, e.message);
@@ -53,7 +53,7 @@ const ChatRoom = server => {
   io.on("connection", async socket => {
     try {
       socket.on("joinRoom", onJoinRoom(socket));
-      socket.on("sendMessage", onSendMessage(socket));
+      socket.on("sendMessage", onSendMessage(io));
       socket.on("disconnect", onDisconnect(socket));
     } catch (e) {
       console.error(e);
