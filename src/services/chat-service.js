@@ -1,26 +1,56 @@
-const values = require("lodash/values");
+const validator = require("validator");
+const { addMessage, getRecentMessages } = require("../services/db-service.js");
+const {
+  USER_NAME_ALPHANUMERIC,
+  NAME_IS_TAKEN,
+  TOO_MANY_USERS
+} = require("../consts/errors");
 
-let users = {};
+const usersByID = {};
+const usersByName = {};
 
 const getUsers = () => {
-  return users;
+  return usersByID;
 };
 
 leaveRoom = id => {
-  const username = users[id];
-  delete users[id];
+  const { username } = usersByID[id] || {};
+  delete usersByID[id];
+  delete usersByName[username];
   return username;
 };
-const joinRoom = async (username, imageUrl, id) => {
-  if (
-    values(users)
-      .map(user => user.username.toLowerCase())
-      .includes(username.toLowerCase())
-  ) {
-    return false;
+
+const canUserJoinRoom = username => {
+  if (Object.values(usersByName).filter(Boolean).length === 1) {
+    return [false, TOO_MANY_USERS];
   }
-  users[id] = { username, imageUrl };
-  return true;
+  if (!validator.isAlphanumeric(username)) {
+    return [false, USER_NAME_ALPHANUMERIC];
+  }
+
+  if (usersByName[username]) {
+    return [false, NAME_IS_TAKEN];
+  }
+
+  return [true, null];
 };
 
-module.exports = { joinRoom, getUsers, leaveRoom };
+const checkIfUserCanJoinAndJoin = async (username, imageUrl, id) => {
+  const [userCanJoin, error] = canUserJoinRoom(username);
+  if (userCanJoin) {
+    usersByID[id] = { username, imageUrl };
+    usersByName[username] = usersByID[id];
+    return [userCanJoin, error];
+  } else {
+    return [false, error];
+  }
+};
+module.exports = {
+  checkIfUserCanJoinAndJoin,
+  getUsers,
+  leaveRoom,
+  canUserJoinRoom,
+  getRecentMessages,
+  addMessage,
+  usersByName
+};

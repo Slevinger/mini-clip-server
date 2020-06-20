@@ -2,20 +2,25 @@ const express = require("express");
 
 const http = require("http");
 const dbClient = require("./services/db-service");
+const env = require("../src/config");
+console.log("env: ", process.env.NODE_ENV);
 
-const { Socket } = require("./sockets/chat-room");
+const { ChatRoom } = require("./sockets/chat-room");
 const app = express();
 const server = http.createServer(app);
 
+// TODO: 1 add env files for prod and dev
+
 (startServer = async () => {
+  env.init();
   await dbClient.init({
-    host: process.env.SQL_HOST,
-    port: process.env.SQL_PORT,
-    user: process.env.SQL_DB_NAME,
-    password: process.env.SQL_DB_PAS,
-    database: process.env.SQL_DB_NAME
+    host: env.dbHost,
+    port: env.dbPort,
+    user: env.dbName,
+    password: env.dbPass,
+    database: env.dbName
   });
-  Socket(server); // assign server to socket io
+  ChatRoom(server); // assign room socket to server
   const port = process.env.PORT || 3000;
 
   app.set("port", port);

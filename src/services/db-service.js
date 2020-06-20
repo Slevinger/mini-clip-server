@@ -26,6 +26,7 @@ function handleDisconnect(db_config) {
     clearInterval(interval);
     console.log("db error", err);
     if (err.code === "PROTOCOL_CONNECTION_LOST") {
+      console.log("DB disconected! trying to reconnect...");
       // Connection to the MySQL server is usually
       handleDisconnect(db_config); // lost due to either server restart, or a
     } else {
@@ -37,12 +38,11 @@ function handleDisconnect(db_config) {
 
 const startCleanUp = () => {
   return setInterval(async () => {
-    console.log("clening");
-    const res = await query(removeAllButLast50Messages);
+    console.log("cleaning");
+    const res = await queryAndCommit(removeAllButLast50Messages);
     if (res.affectedRows === 0) {
       clearInterval(interval);
     }
-    await query("commit");
   }, 24 * 60 * 60 * 100);
 };
 
@@ -54,8 +54,16 @@ const closeConnection = () => {
   return util.promisify(connection.end).call(connection);
 };
 
+const queryAndCommit = async (sql, ...args) => {
+  const res = await util
+    .promisify(connection.query)
+    .call(connection, sql, args);
+  await query(`commit`);
+  return res;
+};
+
 const query = async (sql, ...args) => {
-  return await util.promisify(connection.query).call(connection, sql, args);
+  return util.promisify(connection.query).call(connection, sql, args);
 };
 
 const addMessage = async (username, message) => {
@@ -63,18 +71,15 @@ const addMessage = async (username, message) => {
     if (!message.trim()) {
       throw new Error(MESSAGE_CANNOT_BE_EMPTY);
     }
-    const res = await query(insertMessageAndUserToTable(username, message));
-    await query(`commit`);
-    return res;
+    return queryAndCommit(insertMessageAndUserToTable(username, message));
   } catch (e) {
     console.error(e, e.stack);
     throw e;
   }
 };
-
-const getMessages = async () => {
+const getRecentMessages = async () => {
   try {
-    return await query(getLastTenMessagesFromTable);
+    return query(getLastTenMessagesFromTable);
   } catch (e) {
     console.error(e, e.stack);
     throw e;
@@ -83,6 +88,6 @@ const getMessages = async () => {
 
 module.exports = {
   init,
-  getMessages,
+  getRecentMessages,
   addMessage
 };

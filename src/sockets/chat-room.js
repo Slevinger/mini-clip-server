@@ -1,68 +1,68 @@
 const socketio = require("socket.io");
-var validator = require("validator");
-
 const values = require("lodash/values");
 const {
-  joinRoom,
+  usersByName,
   leaveRoom,
-  getUsers
+  getUsers,
+  checkIfUserCanJoinAndJoin,
+  addMessage,
+  getRecentMessages
 } = require("../services/chat-service.js");
-const { addMessage, getMessages } = require("../services/db-service.js");
 
+const onJoinRoom = socket => async ({ username, imageUrl }, callback) => {
+  const [userJoined, error] = await checkIfUserCanJoinAndJoin(
+    username,
+    imageUrl,
+    socket.id
+  );
+  if (userJoined) {
+    callback({
+      users: values(getUsers()).reduce(
+        (acc, user) => ({ ...acc, [user.username]: user }),
+        {}
+      ),
+      messages: await getRecentMessages()
+    });
+    socket.broadcast.emit("joinedRoom", { username, imageUrl });
+  } else {
+    callback(null, error);
+  }
+};
+
+const onDisconnect = socket => reason => {
+  const user = leaveRoom(socket.id);
+  if (user) {
+    socket.emit("leftRoom", user);
+  }
+};
+const onSendMessage = socket => async ({ username, message }, callback) => {
+  try {
+    if (usersByName[username]) {
+      await addMessage(username, message);
+      socket.emit("message", { username, message, sent_at: new Date() });
+    } else {
+      socket.emit("leftRoom", { username });
+    }
+  } catch (e) {
+    callback(null, e.message);
+  }
+};
 //server
-const Socket = server => {
+const ChatRoom = server => {
   const io = socketio(server, { forceNew: true });
   io.on("connection", async socket => {
     try {
-      socket.on("joinRoom", async ({ username, imageUrl }, callback) => {
-        if (!validator.isAlphanumeric(username)) {
-          return callback(null, "Username must be alphaNumeric");
-        }
-        const canJoin = await joinRoom(username, imageUrl, socket.id);
-        if (canJoin) {
-          callback({
-            users: values(getUsers()).reduce(
-              (acc, user) => ({ ...acc, [user.username]: user }),
-              {}
-            ),
-            messages: await getMessages()
-          });
-          socket.broadcast.emit("joinedRoom", { username, imageUrl });
-        } else {
-          callback(null, "The name is taken");
-        }
-      });
-
-      socket.on("sendMessage", async ({ username, message }, callback) => {
-        try {
-          if (
-            values(getUsers()).findIndex(user => user.username == username) >= 0
-          ) {
-            await addMessage(username, message);
-            io.emit("message", { username, message, sent_at: new Date() });
-          } else {
-            io.emit("leftRoom", { username });
-          }
-        } catch (e) {
-          callback(null, e.message);
-        }
-      });
-
-      socket.on("disconnect", reason => {
-        const user = leaveRoom(socket.id);
-        if (user) {
-          io.emit("leftRoom", user);
-        }
-      });
+      socket.on("joinRoom", onJoinRoom(socket));
+      socket.on("sendMessage", onSendMessage(socket));
+      socket.on("disconnect", onDisconnect(socket));
     } catch (e) {
-      console.log(e);
+      console.error(e);
     }
   });
   io.on("error", error => {
-    console.log(error);
+    console.error(error);
   });
 
   return io;
 };
-
-module.exports = { Socket };
+module.exports = { ChatRoom };
