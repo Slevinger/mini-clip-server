@@ -3,7 +3,7 @@ module.exports = (sequelize, Sequelize) => {
     "message",
     {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.BIGINT,
         allowNull: false,
         primaryKey: true,
         autoIncrement: true
@@ -16,7 +16,8 @@ module.exports = (sequelize, Sequelize) => {
         type: Sequelize.STRING(1000)
       },
       sent_at: {
-        type: Sequelize.INTEGER
+        type: "TIMESTAMP",
+        type: Sequelize.DATE(3)
       }
     },
     { timestamps: false, initialAutoIncrement: 0 }

@@ -2,18 +2,15 @@ const db = require("../models");
 const mysql = require("mysql");
 
 const Message = db.Messages;
-
+const Op = db.Sequelize.Op;
+db.sequelize.sync({ force: true });
 const { MESSAGE_CANNOT_BE_EMPTY } = require("../consts/errors");
-const {
-  GET_LAST_10_MESSAGES,
-  REMOVE_ALL_BUT_LAST_50_MESSAGES
-} = require("../consts/queries");
 let connection;
 
 function handleDisconnect(db_config) {
   connection = mysql.createConnection(db_config); // Recreate the connection, since
   // the old one cannot be reused.
-  const interval = startCleanUp();
+  const interval = checkIfCleanUpNeededAndClean();
 
   connection.connect(function(err) {
     // The server is either down
@@ -38,15 +35,32 @@ function handleDisconnect(db_config) {
   });
 }
 
-const startCleanUp = () => {
-  return setInterval(async () => {
-    console.log("cleaning");
-    const res = await db.sequelize.query(REMOVE_ALL_BUT_LAST_50_MESSAGES, {});
+const cleanOldData = async () => {
+  const keepIds = await Message.findAll({
+    order: [["id", "desc"]],
+    limit: 1000
+  });
 
-    if (res.affectedRows === 0) {
-      clearInterval(interval);
+  const deleted = await Message.destroy({
+    where: {
+      id: {
+        [Op.notIn]: keepIds.map(({ id }) => id)
+      }
     }
-  }, 24 * 60 * 60 * 100);
+  });
+
+  return deleted;
+};
+
+const checkIfCleanUpNeededAndClean = () => {
+  return setInterval(() => {
+    console.log("checking if cleaning is needed");
+    const count = Message.findAndCountAll({});
+    if (count > 1000) {
+      const rowCount = cleanOldData();
+      console.log(`${rowCount} messages were cleaned`);
+    }
+  }, 12 * 60 * 60 * 100);
 };
 
 const init = config => {
@@ -69,11 +83,12 @@ const addMessage = async message => {
 
 const getRecentMessages = async () => {
   try {
-    const res = await db.sequelize.query(GET_LAST_10_MESSAGES, {
-      model: Message,
-      mapToModel: true
+    const res = await Message.findAll({
+      order: [["id", "DESC"]],
+      limit: 10
     });
-    const values = res.map(rowRes => rowRes.dataValues);
+
+    const values = res.reverse().map(rowRes => rowRes.dataValues);
     return values;
   } catch (e) {
     console.error(e, e.stack);
