@@ -41,7 +41,8 @@ function handleDisconnect(db_config) {
 const startCleanUp = () => {
   return setInterval(async () => {
     console.log("cleaning");
-    const res = await queryAndCommit(REMOVE_ALL_BUT_LAST_50_MESSAGES);
+    const res = await db.sequelize.query(REMOVE_ALL_BUT_LAST_50_MESSAGES, {});
+
     if (res.affectedRows === 0) {
       clearInterval(interval);
     }
