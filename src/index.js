@@ -1,15 +1,15 @@
+const env = require("../src/config");
 const express = require("express");
+env.init();
 
 const http = require("http");
 const dbClient = require("./services/db-service");
-const env = require("../src/config");
 
 const { ChatRoom } = require("./sockets/chat-room");
 const app = express();
 const server = http.createServer(app);
 
 (startServer = async () => {
-  env.init();
   await dbClient.init({
     host: env.dbHost,
     port: env.dbPort,

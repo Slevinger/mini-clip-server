@@ -16,12 +16,13 @@ const onJoinRoom = emitter => async ({ username, imageUrl }, callback) => {
     emitter.id
   );
   if (userJoined) {
+    const messages = await getRecentMessages();
     callback({
       users: values(getUsers()).reduce(
         (acc, user) => ({ ...acc, [user.username]: user }),
         {}
       ),
-      messages: await getRecentMessages()
+      messages
     });
     emitter.broadcast.emit("joinedRoom", { username, imageUrl });
   } else {
@@ -37,9 +38,10 @@ const onDisconnect = emitter => reason => {
 };
 const onSendMessage = emitter => async ({ username, message }, callback) => {
   try {
+    const sent_at = new Date().getTime();
     if (usersByName[username]) {
-      await addMessage(username, message);
-      emitter.emit("message", { username, message, sent_at: new Date() });
+      await addMessage({ username, message, sent_at });
+      emitter.emit("message", { username, message, sent_at });
     } else {
       emitter.emit("leftRoom", { username });
     }

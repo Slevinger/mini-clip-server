@@ -1,8 +1,10 @@
-const util = require("util");
+const db = require("../models");
 const mysql = require("mysql");
+
+const Message = db.Messages;
+
 const { MESSAGE_CANNOT_BE_EMPTY } = require("../consts/errors");
 const {
-  INSERT_ONE_ROW_TO_MESSAGES,
   GET_LAST_10_MESSAGES,
   REMOVE_ALL_BUT_LAST_50_MESSAGES
 } = require("../consts/queries");
@@ -50,39 +52,31 @@ const init = config => {
   handleDisconnect(config);
 };
 
-const closeConnection = () => {
-  return util.promisify(connection.end).call(connection);
-};
-
-const queryAndCommit = async (sql, ...args) => {
-  const res = await util
-    .promisify(connection.query)
-    .call(connection, sql, args);
-  await query(`commit`);
-  return res;
-};
-
-const query = async (sql, ...args) => {
-  return util.promisify(connection.query).call(connection, sql, args);
-};
-
-const addMessage = async (username, message) => {
+const addMessage = async message => {
   try {
-    if (!message.trim()) {
+    if (message.message.trim().length === 0) {
       throw new Error(MESSAGE_CANNOT_BE_EMPTY);
     }
-    return queryAndCommit(INSERT_ONE_ROW_TO_MESSAGES(username, message));
+    const msg = await new Message(message);
+    msg.save();
+    return msg;
   } catch (e) {
     console.error(e, e.stack);
     throw e;
   }
 };
+
 const getRecentMessages = async () => {
   try {
-    return query(GET_LAST_10_MESSAGES);
+    const res = await db.sequelize.query(GET_LAST_10_MESSAGES, {
+      model: Message,
+      mapToModel: true
+    });
+    const values = res.map(rowRes => rowRes.dataValues);
+    return values;
   } catch (e) {
     console.error(e, e.stack);
-    throw e;
+    throw new Error("Message cannot be empty");
   }
 };
 
