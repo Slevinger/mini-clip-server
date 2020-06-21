@@ -84,12 +84,12 @@ const addMessage = async message => {
 
 const getRecentMessages = async () => {
   try {
-    const res = await Message.findAll({
+    const last10Messages = await Message.findAll({
       order: [["id", "DESC"]],
       limit: 10
     });
 
-    return res.reverse().map(rowRes => rowRes.dataValues);
+    return last10Messages.reverse().map(rowRes => rowRes.dataValues);
   } catch (e) {
     console.error(e, e.stack);
     throw new Error("Message cannot be empty");
