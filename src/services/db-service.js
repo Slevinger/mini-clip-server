@@ -1,13 +1,14 @@
 const db = require("../models");
 const mysql = require("mysql");
+const { MESSAGE_CANNOT_BE_EMPTY } = require("../consts/errors");
 
 const Message = db.Messages;
 const Op = db.Sequelize.Op;
 db.sequelize.sync();
-const { MESSAGE_CANNOT_BE_EMPTY } = require("../consts/errors");
 let connection;
 
 function handleDisconnect(db_config) {
+  console.log("trying to connect to db", db_config);
   connection = mysql.createConnection(db_config); // Recreate the connection, since
   // the old one cannot be reused.
   const interval = checkIfCleanUpNeededAndClean();
@@ -88,8 +89,7 @@ const getRecentMessages = async () => {
       limit: 10
     });
 
-    const values = res.reverse().map(rowRes => rowRes.dataValues);
-    return values;
+    return res.reverse().map(rowRes => rowRes.dataValues);
   } catch (e) {
     console.error(e, e.stack);
     throw new Error("Message cannot be empty");
