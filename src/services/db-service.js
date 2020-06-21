@@ -3,7 +3,7 @@ const mysql = require("mysql");
 
 const Message = db.Messages;
 const Op = db.Sequelize.Op;
-db.sequelize.sync({ force: true });
+db.sequelize.sync();
 const { MESSAGE_CANNOT_BE_EMPTY } = require("../consts/errors");
 let connection;
 
